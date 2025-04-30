@@ -35,8 +35,4 @@
     <PackageReference Include="Silk.NET.XInput" Version="2.22.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="DirectX\" />
-  </ItemGroup>
-
 </Project>
