@@ -12,11 +12,15 @@ namespace Qubit.Engine.Graphics.DirectXShaders
     {
         float[] vertices;
         uint[] indices;
+        private Graphics.DirectX directX; // Add a reference to the DirectX instance
+        private ComPtr<ID3D11Buffer> vertexBuffer = default;
+        private ComPtr<ID3D11Buffer> indexBuffer = default;
 
-        public Buffer(float[] vertices, uint[] indices)
+        public Buffer(float[] vertices, uint[] indices, Graphics.DirectX directX)
         {
             this.vertices = vertices;
             this.indices = indices;
+            this.directX = directX; // Initialize the DirectX instance
 
             Load(vertices, indices);
         }
@@ -38,11 +42,14 @@ namespace Qubit.Engine.Graphics.DirectXShaders
                 };
 
                 SilkMarshal.ThrowHResult(
-                    Graphics.DirectX.Device.CreateBuffer(
+                    directX.Device.CreateBuffer(
                         in bufferDesc,
                         in subresourceData,
-                        ref Graphics.DirectX.VertexBuffer
+                        ref vertexBuffer
                 ));
+                
+                // Assign to DirectX after creation
+                directX.VertexBuffer = vertexBuffer;
             }
 
             bufferDesc = new BufferDesc
@@ -60,15 +67,15 @@ namespace Qubit.Engine.Graphics.DirectXShaders
                 };
 
                 SilkMarshal.ThrowHResult(
-                    Graphics.DirectX.Device.CreateBuffer(
+                    directX.Device.CreateBuffer(
                         in bufferDesc,
-                        in subresourceData, 
-                        ref Graphics.DirectX.IndexBuffer
+                        in subresourceData,
+                        ref indexBuffer
                 ));
+                
+                // Assign to DirectX after creation
+                directX.IndexBuffer = indexBuffer;
             }
-
         }
-
     }
-
 }

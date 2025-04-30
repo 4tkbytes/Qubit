@@ -31,7 +31,10 @@ namespace Qubit.Engine.Graphics.DirectXShaders
             this.vertexShaderCode = vertexShaderCode;
             this.pixelShaderCode = pixelShaderCode;
 
-            buffer = new(vertices, indices);
+            if (EngineWindow.directX == null)
+                throw new InvalidOperationException("DirectX instance is not initialized");
+
+            buffer = new(vertices, indices, EngineWindow.directX);
 
             vertexShader = new(vertexShaderCode, Shader2.ShaderType.Vertex);
             pixelShader = new(pixelShaderCode, Shader2.ShaderType.Pixel);
@@ -47,6 +50,9 @@ namespace Qubit.Engine.Graphics.DirectXShaders
 
         private unsafe void layoutDesc()
         {
+            if (EngineWindow.directX == null)
+                throw new InvalidOperationException("DirectX instance is not initialized");
+                
             fixed (byte* name = SilkMarshal.StringToMemory("POS"))
             {
                 var inputElement = new InputElementDesc

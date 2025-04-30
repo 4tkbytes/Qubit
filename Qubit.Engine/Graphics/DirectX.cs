@@ -38,8 +38,16 @@ namespace Qubit.Engine.Graphics
         public ComPtr<IDXGISwapChain1> Swapchain => swapchain;
         public ComPtr<ID3D11Device> Device => device;
         public ComPtr<ID3D11DeviceContext> DeviceContext => deviceContext;
-        public ComPtr<ID3D11Buffer> VertexBuffer => vertexBuffer;
-        public ComPtr<ID3D11Buffer> IndexBuffer => indexBuffer;
+        public ComPtr<ID3D11Buffer> VertexBuffer 
+        { 
+            get => vertexBuffer;
+            set => vertexBuffer = value;
+        }
+        public ComPtr<ID3D11Buffer> IndexBuffer 
+        { 
+            get => indexBuffer;
+            set => indexBuffer = value;
+        }
         public ComPtr<ID3D11VertexShader> VertexShader
         {
             get => vertexShader;
@@ -62,7 +70,9 @@ namespace Qubit.Engine.Graphics
             // This is assuming that only Windows can run this, but can be changed accordingly
             const bool forceDxvk = false;
 
-            INativeWindowSource nativeWindow = EngineWindow._window;
+            var nativeWindow = EngineWindow._window 
+                ?? throw new InvalidOperationException("EngineWindow._window is null");
+            
             dxgi = DXGI.GetApi(nativeWindow, forceDxvk);
             d3d11 = D3D11.GetApi(nativeWindow, forceDxvk);
             compiler = D3DCompiler.GetApi();
@@ -104,11 +114,14 @@ namespace Qubit.Engine.Graphics
             // Create DXGI factory to allow us to create a swapchain
             factory = dxgi.CreateDXGIFactory<IDXGIFactory2>();
 
+            if (nativeWindow.Native?.DXHandle == null)
+                throw new InvalidOperationException("Window handle is null");
+
             SilkMarshal.ThrowHResult(
                 factory.CreateSwapChainForHwnd
                 (
                     device,
-                    nativeWindow.Native!.DXHandle!.Value,
+                    nativeWindow.Native.DXHandle.Value,
                     in swapChainDesc,
                     null,
                     ref Unsafe.NullRef<IDXGIOutput>(),

@@ -19,11 +19,11 @@ namespace Qubit.Engine.Core
 {
     public class EngineWindow
     {
-        public static IWindow _window;
-        IAppLogic appLogic;
-        IInput inputLogic;
-        IInputContext inputContext;
-        public static DirectX directX;
+        public static IWindow? _window;
+        private readonly IAppLogic appLogic;
+        private readonly IInput inputLogic;
+        private IInputContext? inputContext;
+        public static DirectX? directX;
 
         public enum GraphicsAPI
         {
@@ -60,6 +60,9 @@ namespace Qubit.Engine.Core
 
         private void OnLoad()
         {
+            if (_window == null)
+                throw new InvalidOperationException("Window not initialized");
+
             // Initialise DirectX
             unsafe
             {
@@ -74,12 +77,15 @@ namespace Qubit.Engine.Core
             {
                 inputContext.Keyboards[i].KeyDown += OnKeyDown;
             }
+
+            // Call application's OnLoad AFTER DirectX is initialized
+            appLogic.OnLoad();
         }
 
         internal void Cleanup()
         {
-            directX.Cleanup();
-            _window.Dispose();
+            directX?.Cleanup();
+            _window?.Dispose();
         }
 
         private void OnKeyDown(IKeyboard keyboard, Key key, int keycode)
@@ -89,18 +95,25 @@ namespace Qubit.Engine.Core
 
             if (key == Key.Escape)
             {
-                _window.Close();
+                _window?.Close();
             }
         }
 
         public void Run()
         {
+            if (_window == null)
+                throw new InvalidOperationException("Window not initialized");
+                
             _window.Run();
         }
 
         internal void SubscribeToEvents()
         {
-            _window.Load += appLogic.OnLoad;
+            if (_window == null)
+                throw new InvalidOperationException("Window not initialized");
+
+            // Don't subscribe to Load here - we'll call it manually after DirectX init
+            // _window.Load += appLogic.OnLoad;
             _window.Update += appLogic.OnUpdate;
             _window.Render += appLogic.OnRender;
             _window.FramebufferResize += OnFramebufferResize;
@@ -108,6 +121,9 @@ namespace Qubit.Engine.Core
 
         void OnFramebufferResize(Vector2D<int> newSize)
         {
+            if (directX == null)
+                throw new InvalidOperationException("DirectX not initialized");
+                
             SilkMarshal.ThrowHResult
             (
                 directX.Swapchain.ResizeBuffers(0, (uint)newSize.X, (uint)newSize.Y, Format.FormatB8G8R8A8Unorm, 0)

@@ -39,6 +39,7 @@
   <ItemGroup>
     <Folder Include="Graphics\Helpers\" />
     <Folder Include="Utils\Templates\" />
+	<EmbeddedResource Include="Resources\**\*.hlsl" />
   </ItemGroup>
 
 </Project>
