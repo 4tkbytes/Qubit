@@ -4,6 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -33,6 +34,11 @@
     <PackageReference Include="Silk.NET.Windowing" Version="2.22.0" />
     <PackageReference Include="Silk.NET.XAudio" Version="2.22.0" />
     <PackageReference Include="Silk.NET.XInput" Version="2.22.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Graphics\Helpers\" />
+    <Folder Include="Utils\Templates\" />
   </ItemGroup>
 
 </Project>

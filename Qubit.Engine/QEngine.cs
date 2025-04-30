@@ -8,18 +8,20 @@ namespace Qubit.Engine
     public class QEngine
     {
         WindowOptions options;
-        Window window;
+        private EngineWindow window;
+        public EngineWindow Window => window;
 
         public QEngine(WindowOptions options, IAppLogic appLogic, IInput inputLogic)
         {
             this.options = options;
 
-            window = new(options, appLogic, inputLogic);
+            window = new(options, appLogic, inputLogic, EngineWindow.GraphicsAPI.Any);
         }
 
         public void Run()
         {
             window.Run();
+            window.Cleanup();
         }
     }
 
