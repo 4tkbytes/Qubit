@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35919.96
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Qubit.Engine", "Qubit.Engine\Qubit.Engine.csproj", "{F287E438-1F20-4181-A623-F4A223885D1C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PointLonely", "PointLonely\PointLonely.csproj", "{4093FD89-681F-4A2C-9030-663B7D5D9AB9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F287E438-1F20-4181-A623-F4A223885D1C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F287E438-1F20-4181-A623-F4A223885D1C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F287E438-1F20-4181-A623-F4A223885D1C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F287E438-1F20-4181-A623-F4A223885D1C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4093FD89-681F-4A2C-9030-663B7D5D9AB9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4093FD89-681F-4A2C-9030-663B7D5D9AB9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4093FD89-681F-4A2C-9030-663B7D5D9AB9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4093FD89-681F-4A2C-9030-663B7D5D9AB9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6AE36465-40D9-4BC5-91FD-D3DC91378D1A}
+	EndGlobalSection
+EndGlobal
