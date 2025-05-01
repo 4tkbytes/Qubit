@@ -23,9 +23,12 @@ namespace Qubit.Engine.Graphics
         ComPtr<IDXGISwapChain1> swapchain = default;
         ComPtr<ID3D11Device> device = default;
         ComPtr<ID3D11DeviceContext> deviceContext = default;
+
         ComPtr<ID3D11Buffer> vertexBuffer = default;
         ComPtr<ID3D11Buffer> indexBuffer = default;
         ComPtr<ID3D11Buffer> colourBuffer = default;
+        ComPtr<ID3D11Buffer> transformBuffer = default;
+
         ComPtr<ID3D11VertexShader> vertexShader = default;
         ComPtr<ID3D11PixelShader> pixelShader = default;
         ComPtr<ID3D11InputLayout> inputLayout = default;
@@ -39,6 +42,8 @@ namespace Qubit.Engine.Graphics
         public ComPtr<IDXGISwapChain1> Swapchain => swapchain;
         public ComPtr<ID3D11Device> Device => device;
         public ComPtr<ID3D11DeviceContext> DeviceContext => deviceContext;
+
+        // Buffers
         public ComPtr<ID3D11Buffer> VertexBuffer 
         { 
             get => vertexBuffer;
@@ -54,7 +59,13 @@ namespace Qubit.Engine.Graphics
             get => colourBuffer;
             set => colourBuffer = value;
         }
+        public ComPtr<ID3D11Buffer> TransformBuffer
+        {
+            get => transformBuffer;
+            set => transformBuffer = value;
+        }
 
+        // Shaders
         public ComPtr<ID3D11VertexShader> VertexShader
         {
             get => vertexShader;
@@ -65,76 +76,80 @@ namespace Qubit.Engine.Graphics
             get => pixelShader;
             set => pixelShader = value;
         }
+
         public ComPtr<ID3D11InputLayout> InputLayout
         {
             get => inputLayout;
             set => inputLayout = value;
         }
 
-        unsafe public DirectX()
+        public DirectX()
         {
-            // Whether or not to force use of DXVK on platforms where native DirectX implementations are available
-            // This is assuming that only Windows can run this, but can be changed accordingly
-            const bool forceDxvk = false;
-
-            var nativeWindow = EngineWindow._window 
-                ?? throw new InvalidOperationException("EngineWindow._window is null");
-            
-            dxgi = DXGI.GetApi(nativeWindow, forceDxvk);
-            d3d11 = D3D11.GetApi(nativeWindow, forceDxvk);
-            compiler = D3DCompiler.GetApi();
-
-            SilkMarshal.ThrowHResult
-            (
-                d3d11.CreateDevice
-                (
-                    default(ComPtr<IDXGIAdapter>),
-                    D3DDriverType.Hardware,
-                    Software: default,
-                    (uint)CreateDeviceFlag.Debug,
-                    null,
-                    0,
-                    D3D11.SdkVersion,
-                    ref device,
-                    null,
-                    ref deviceContext
-                )
-            );
-#if DEBUG
-            if (OperatingSystem.IsWindows())
+            unsafe
             {
-                // Log debug messages for this device (given that we've enabled the debug flag). Don't do this in release code!
-                device.SetInfoQueueCallback(msg => Console.WriteLine(SilkMarshal.PtrToString((nint)msg.PDescription)));
-            }
-#endif
+                // Whether or not to force use of DXVK on platforms where native DirectX implementations are available
+                // This is assuming that only Windows can run this, but can be changed accordingly
+                const bool forceDxvk = false;
 
-            // Swapchain
-            var swapChainDesc = new SwapChainDesc1
-            {
-                BufferCount = 3,
-                Format = Format.FormatB8G8R8A8Unorm,
-                BufferUsage = DXGI.UsageRenderTargetOutput,
-                SwapEffect = SwapEffect.FlipDiscard,
-                SampleDesc = new SampleDesc(1, 0)
-            };
+                var nativeWindow = EngineWindow._window
+                    ?? throw new InvalidOperationException("EngineWindow._window is null");
 
-            // Create DXGI factory to allow us to create a swapchain
-            factory = dxgi.CreateDXGIFactory<IDXGIFactory2>();
+                dxgi = DXGI.GetApi(nativeWindow, forceDxvk);
+                d3d11 = D3D11.GetApi(nativeWindow, forceDxvk);
+                compiler = D3DCompiler.GetApi();
 
-            if (nativeWindow.Native?.DXHandle == null)
-                throw new InvalidOperationException("Window handle is null");
-
-            SilkMarshal.ThrowHResult(
-                factory.CreateSwapChainForHwnd
+                SilkMarshal.ThrowHResult
                 (
-                    device,
-                    nativeWindow.Native.DXHandle.Value,
-                    in swapChainDesc,
-                    null,
-                    ref Unsafe.NullRef<IDXGIOutput>(),
-                    ref swapchain
+                    d3d11.CreateDevice
+                    (
+                        default(ComPtr<IDXGIAdapter>),
+                        D3DDriverType.Hardware,
+                        Software: default,
+                        (uint)CreateDeviceFlag.Debug,
+                        null,
+                        0,
+                        D3D11.SdkVersion,
+                        ref device,
+                        null,
+                        ref deviceContext
                     )
                 );
+#if DEBUG
+                if (OperatingSystem.IsWindows())
+                {
+                    // Log debug messages for this device (given that we've enabled the debug flag). Don't do this in release code!
+                    device.SetInfoQueueCallback(msg => Console.WriteLine(SilkMarshal.PtrToString((nint)msg.PDescription)));
+                }
+#endif
+
+                // Swapchain
+                var swapChainDesc = new SwapChainDesc1
+                {
+                    BufferCount = 3,
+                    Format = Format.FormatB8G8R8A8Unorm,
+                    BufferUsage = DXGI.UsageRenderTargetOutput,
+                    SwapEffect = SwapEffect.FlipDiscard,
+                    SampleDesc = new SampleDesc(1, 0)
+                };
+
+                // Create DXGI factory to allow us to create a swapchain
+                factory = dxgi.CreateDXGIFactory<IDXGIFactory2>();
+
+                if (nativeWindow.Native?.DXHandle == null)
+                    throw new InvalidOperationException("Window handle is null");
+
+                SilkMarshal.ThrowHResult(
+                    factory.CreateSwapChainForHwnd
+                    (
+                        device,
+                        nativeWindow.Native.DXHandle.Value,
+                        in swapChainDesc,
+                        null,
+                        ref Unsafe.NullRef<IDXGIOutput>(),
+                        ref swapchain
+                        )
+                    );
+            }
         }
 
         public void Cleanup()

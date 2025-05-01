@@ -26,12 +26,16 @@ namespace Qubit.Engine.Graphics
         private string pixelShaderCode;
 
         private ComPtr<ID3D11InputLayout> inputLayout;
+
+        // Public variables
         public ComPtr<ID3D11InputLayout> InputLayout => inputLayout;
         public float[] Vertices => vertices;
         public uint[] Indices => indices;
         public float[] Colors => colours;
         public int VertexCount => vertices?.Length / 3 ?? 0;
         public int IndicesCount => indices?.Length ?? 0;
+        public Transform Transform { get; set; } = new Transform();
+
 
         public Mesh(float[] vertices, uint[] indices, float[] colours, string vertexShaderCode, string pixelShaderCode)
         {

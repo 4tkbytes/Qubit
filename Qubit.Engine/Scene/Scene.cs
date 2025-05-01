@@ -15,6 +15,9 @@ namespace Qubit.Engine.Scene
         private Dictionary<String, Mesh> meshList;
         private String sceneName;
         private bool isInitialized = false;
+        private Camera camera = new();
+
+        public Camera Camera => camera;
 
         public Dictionary<String, Mesh> MeshList
         {
@@ -35,6 +38,8 @@ namespace Qubit.Engine.Scene
 
         public void Render(Render render)
         {
+            render.Camera = camera;
+
             // Set up common rendering state  
             render.SetViewport(EngineWindow._window.FramebufferSize);
             render.SetRenderTargetView();

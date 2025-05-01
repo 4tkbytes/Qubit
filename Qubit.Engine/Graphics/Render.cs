@@ -29,11 +29,15 @@ namespace Qubit.Engine.Graphics
         private ComPtr<ID3D11RenderTargetView> renderTargetView = default;
         private ComPtr<ID3D11Texture2D> framebuffer;
 
-        private ComPtr<ID3D11Buffer> vertexBuffer;
-        private ComPtr<ID3D11Buffer> indexBuffer;
-        private ComPtr<ID3D11Buffer> colourBuffer;
+        private ComPtr<ID3D11Buffer> vertexBuffer = default;
+        private ComPtr<ID3D11Buffer> indexBuffer = default;
+        private ComPtr<ID3D11Buffer> colourBuffer = default;
+        private ComPtr<ID3D11Buffer> transformBuffer = default;
+
+        private Camera camera = new Camera();
 
         public ComPtr<ID3D11RenderTargetView> RenderTargetView => renderTargetView;
+        public Camera Camera { get; set; }
 
         public Render(DirectX directX)
         {
@@ -105,9 +109,13 @@ namespace Qubit.Engine.Graphics
             directX.DeviceContext.IASetVertexBuffers(1, 1, ref colourBuffer, in colorStride, in colorOffset);
 
             directX.DeviceContext.IASetIndexBuffer(indexBuffer, Format.FormatR32Uint, 0);
+
+            UpdateTransformBuffer(
+                mesh.Transform.ModelMatrix,
+                camera.ViewMatrix,
+                camera.ProjectionMatrix
+            );
         }
-
-
         public void BindShader()
         {
             ComPtr<ID3D11ClassInstance> nullClassInstance = default;
@@ -124,6 +132,73 @@ namespace Qubit.Engine.Graphics
         {
             directX.Swapchain.Present(1, 0);
         }
+
+        public unsafe void CreateTransformBuffer()
+        {
+            var bufferDesc = new BufferDesc
+            {
+                ByteWidth = (uint)(sizeof(Matrix4X4<float>) * 3), // Model, View, Projection
+                Usage = Usage.Dynamic,
+                BindFlags = (uint)BindFlag.ConstantBuffer,
+                CPUAccessFlags = (uint)CpuAccessFlag.Write
+            };
+
+            // Create the buffer
+            transformBuffer = default;
+            SilkMarshal.ThrowHResult(
+                directX.Device.CreateBuffer(in bufferDesc, null, ref transformBuffer)
+            );
+
+            directX.TransformBuffer = transformBuffer;
+        }
+
+        public void UpdateTransformBuffer(Matrix4X4<float> model, Matrix4X4<float> view, Matrix4X4<float> projection)
+        {
+            unsafe
+            {
+                // Check if the transformBuffer is not initialized
+                if (transformBuffer.Handle == null)
+                {
+                    CreateTransformBuffer();
+                }
+
+                try
+                {
+                    // Map the buffer to get access to its memory
+                    var mappedResource = default(MappedSubresource);
+                    directX.DeviceContext.Map(transformBuffer, 0, Map.WriteDiscard, 0, ref mappedResource);
+
+                    // Get a pointer to the buffer data
+                    var dataPtr = (float*)mappedResource.PData;
+                    if (dataPtr == null)
+                    {
+                        throw new InvalidOperationException("Failed to map constant buffer memory");
+                    }
+
+                    // Write all matrices in a single block
+                    Span<Matrix4X4<float>> matrices = stackalloc Matrix4X4<float>[3] { model, view, projection };
+                    fixed (Matrix4X4<float>* matricesPtr = matrices)
+                    {
+                        // Copy all matrices at once (48 floats total)
+                        System.Buffer.MemoryCopy(
+                            matricesPtr,
+                            dataPtr,
+                            3 * sizeof(Matrix4X4<float>),
+                            3 * sizeof(Matrix4X4<float>)
+                        );
+                    }
+                }
+                finally
+                {
+                    // Always unmap the buffer when done
+                    directX.DeviceContext.Unmap(transformBuffer, 0);
+                }
+
+                // Bind the buffer to the vertex shader
+                directX.DeviceContext.VSSetConstantBuffers(0, 1, ref transformBuffer);
+            }
+        }
+
 
         public void Cleanup()
         {

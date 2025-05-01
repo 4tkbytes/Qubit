@@ -36,8 +36,4 @@
     <None Remove="Utils\Templates\**" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Graphics\Math\" />
-  </ItemGroup>
-
 </Project>
