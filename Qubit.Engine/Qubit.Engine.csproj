@@ -12,7 +12,6 @@
     <PackageReference Include="Silk.NET.Direct2D" Version="2.22.0" />
     <PackageReference Include="Silk.NET.Direct3D.Compilers" Version="2.22.0" />
     <PackageReference Include="Silk.NET.Direct3D11" Version="2.22.0" />
-    <PackageReference Include="Silk.NET.Direct3D12" Version="2.22.0" />
     <PackageReference Include="Silk.NET.DirectComposition" Version="2.22.0" />
     <PackageReference Include="Silk.NET.DirectStorage" Version="2.22.0" />
     <PackageReference Include="Silk.NET.DXGI" Version="2.22.0" />
@@ -25,14 +24,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Utils\Templates\" />
 	<EmbeddedResource Include="Resources\**\*.hlsl" />
   </ItemGroup>
 
   <ItemGroup>
     <Compile Remove="Graphics\Helpers\**" />
+    <Compile Remove="Utils\Templates\**" />
     <EmbeddedResource Remove="Graphics\Helpers\**" />
+    <EmbeddedResource Remove="Utils\Templates\**" />
     <None Remove="Graphics\Helpers\**" />
+    <None Remove="Utils\Templates\**" />
   </ItemGroup>
 
 </Project>

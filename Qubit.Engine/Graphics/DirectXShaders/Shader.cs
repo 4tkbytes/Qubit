@@ -1,86 +1,162 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Qubit.Engine.Core;
 using Silk.NET.Core.Native;
 using Silk.NET.Direct3D11;
-using Silk.NET.DXGI;
 
 namespace Qubit.Engine.Graphics.DirectXShaders
 {
     public class Shader
     {
-        private Shader2 vertexShader;
-        private Shader2 pixelShader;
-        private Buffer buffer;
+        string shaderSource;
+        ShaderType shaderType;
 
-        private float[] vertices; 
-        private uint[] indices; 
-        private string vertexShaderCode; 
-        private string pixelShaderCode;
+        // Private compiled stuff
+        private ComPtr<ID3D11VertexShader> vertexShader;
+        private ComPtr<ID3D11PixelShader> pixelShader;
 
-        private ComPtr<ID3D11InputLayout> inputLayout;
-        public ComPtr<ID3D11InputLayout> InputLayout => inputLayout;
+        private ComPtr<ID3D10Blob> vertexCode = default;
+        private ComPtr<ID3D10Blob> vertexErrors = default;
 
-        public Shader(float[] vertices, uint[] indices, string vertexShaderCode, string pixelShaderCode)
+        private ComPtr<ID3D10Blob> pixelCode = default;
+        private ComPtr<ID3D10Blob> pixelErrors = default;
+
+        // Public stuff
+        public ComPtr<ID3D11VertexShader> VertexShader => vertexShader;
+        public ComPtr<ID3D11PixelShader> PixelShader => pixelShader;
+        public ComPtr<ID3D10Blob> VertexCode => vertexCode;
+
+
+        public enum ShaderType
         {
-            this.vertices = vertices;
-            this.indices = indices;
-            this.vertexShaderCode = vertexShaderCode;
-            this.pixelShaderCode = pixelShaderCode;
-
-            if (EngineWindow.directX == null)
-                throw new InvalidOperationException("DirectX instance is not initialized");
-
-            buffer = new(vertices, indices, EngineWindow.directX);
-
-            vertexShader = new(vertexShaderCode, Shader2.ShaderType.Vertex);
-            pixelShader = new(pixelShaderCode, Shader2.ShaderType.Pixel);
-
-            unsafe
-            {
-                layoutDesc();
-            }
-
-            vertexShader.Cleanup();
-            pixelShader.Cleanup();
+            Vertex,
+            Pixel,
         }
 
-        private unsafe void layoutDesc()
+        public Shader(string shaderSource, ShaderType type)
         {
-            if (EngineWindow.directX == null)
-                throw new InvalidOperationException("DirectX instance is not initialized");
-                
-            fixed (byte* name = SilkMarshal.StringToMemory("POS"))
+            this.shaderSource = shaderSource;
+            shaderType = type;
+
+            var shaderBytes = Encoding.ASCII.GetBytes(shaderSource);
+            switch (type)
             {
-                var inputElement = new InputElementDesc
+                case ShaderType.Vertex:
+                    unsafe { LoadVertex(shaderBytes); }
+                    return;
+                case ShaderType.Pixel:
+                    unsafe { LoadPixel(shaderBytes); }
+                    return;
+            }
+        }
+
+        public unsafe void LoadVertex(byte[] resourceContents)
+        {
+            HResult hr = EngineWindow.directX.Compiler.Compile
+            (
+                in resourceContents[0],               // Pass the first byte by reference
+                (nuint)resourceContents.Length,       // Length of the shader source
+                (string)null,                         // Optional: source file name (null if not needed)
+                null,                                 // Optional: defines (null if not needed)
+                ref Unsafe.NullRef<ID3DInclude>(),    // Optional: include handler (null if not needed)
+                "vs_main",                            // Entry point name
+                "vs_5_0",                             // Target shader model
+                0,                                    // Flags1
+                0,                                    // Flags2
+                ref vertexCode,                       // Compiled shader code
+                ref vertexErrors                      // Compilation errors
+            );
+
+            if (hr.IsFailure)
+            {
+                if (vertexErrors.Handle is not null)
                 {
-                    SemanticName = name,
-                    SemanticIndex = 0,
-                    Format = Format.FormatR32G32B32Float,
-                    InputSlot = 0,
-                    AlignedByteOffset = 0,
-                    InputSlotClass = InputClassification.PerVertexData,
-                    InstanceDataStepRate = 0
-                };
+                    Console.WriteLine(SilkMarshal.PtrToString((nint)vertexErrors.GetBufferPointer()));
+                }
 
-                inputLayout = default;
-                SilkMarshal.ThrowHResult
-                (
-                    EngineWindow.directX.Device.CreateInputLayout
-                    (
-                        in inputElement,
-                        1,
-                        vertexShader.VertexCode.GetBufferPointer(),
-                        vertexShader.VertexCode.GetBufferSize(),
-                        ref inputLayout
-                    )
-                );
-                EngineWindow.directX.InputLayout = inputLayout;
+                hr.Throw();
             }
+
+            // This may cause an error might be one cause...
+
+            // Fix: Use a local variable to hold the shader and then assign it to the property
+            vertexShader = default;
+
+            SilkMarshal.ThrowHResult
+            (
+                EngineWindow.directX.Device.CreateVertexShader
+                (
+                    vertexCode.GetBufferPointer(),
+                    vertexCode.GetBufferSize(),
+                    ref Unsafe.NullRef<ID3D11ClassLinkage>(),
+                    ref vertexShader
+                )
+            );
+
+            EngineWindow.directX.VertexShader = vertexShader;
         }
 
+        public unsafe void LoadPixel(byte[] resourceContents)
+        {
+            HResult hr = EngineWindow.directX.Compiler.Compile
+            (
+                in resourceContents[0],               // Pass the first byte by reference
+                (nuint)resourceContents.Length,       // Length of the shader source
+                (string)null,                         // Optional: source file name (null if not needed)
+                null,                                 // Optional: defines (null if not needed)
+                ref Unsafe.NullRef<ID3DInclude>(),    // Optional: include handler (null if not needed)
+                "ps_main",                            // Entry point name
+                "ps_5_0",                             // Target shader model
+                0,                                    // Flags1
+                0,                                    // Flags2
+                ref pixelCode,                        // Compiled shader code
+                ref pixelErrors                       // Compilation errors
+            );
+
+            if (hr.IsFailure)
+            {
+                if (pixelErrors.Handle is not null)
+                {
+                    Console.WriteLine(SilkMarshal.PtrToString((nint)pixelErrors.GetBufferPointer()));
+                }
+
+                hr.Throw();
+            }
+
+            pixelShader = default;
+
+            SilkMarshal.ThrowHResult
+            (
+                EngineWindow.directX.Device.CreatePixelShader
+                (
+                    pixelCode.GetBufferPointer(),
+                    pixelCode.GetBufferSize(),
+                    ref Unsafe.NullRef<ID3D11ClassLinkage>(),
+                    ref pixelShader
+                )
+            );
+
+            EngineWindow.directX.PixelShader = pixelShader;
+        }
+
+        public void Cleanup()
+        {
+            switch (shaderType)
+            {
+                case ShaderType.Vertex:
+                    vertexCode.Dispose();
+                    vertexErrors.Dispose();
+                    return;
+                case ShaderType.Pixel:
+                    pixelCode.Dispose();
+                    pixelErrors.Dispose();
+                    return;
+            }
+            return;
+        }
     }
 }
