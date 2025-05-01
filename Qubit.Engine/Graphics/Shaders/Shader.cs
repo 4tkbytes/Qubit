@@ -81,9 +81,6 @@ namespace Qubit.Engine.Graphics.DirectXShaders
                 hr.Throw();
             }
 
-            // This may cause an error might be one cause...
-
-            // Fix: Use a local variable to hold the shader and then assign it to the property
             vertexShader = default;
 
             SilkMarshal.ThrowHResult

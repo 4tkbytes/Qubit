@@ -5,17 +5,18 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Qubit.Engine.Core;
+using Qubit.Engine.Graphics.DirectXShaders;
 using Silk.NET.Core.Native;
 using Silk.NET.Direct3D11;
 using Silk.NET.DXGI;
 
-namespace Qubit.Engine.Graphics.DirectXShaders
+namespace Qubit.Engine.Graphics
 {
     public class Mesh
     {
         private Shader vertexShader;
         private Shader pixelShader;
-        private Buffer buffer;
+        private DirectXShaders.Buffer buffer;
 
         private float[] vertices;
         private uint[] indices;
@@ -26,6 +27,11 @@ namespace Qubit.Engine.Graphics.DirectXShaders
 
         private ComPtr<ID3D11InputLayout> inputLayout;
         public ComPtr<ID3D11InputLayout> InputLayout => inputLayout;
+        public float[] Vertices => vertices;
+        public uint[] Indices => indices;
+        public float[] Colors => colours;
+        public int VertexCount => vertices?.Length / 3 ?? 0;
+        public int IndicesCount => indices?.Length ?? 0;
 
         public Mesh(float[] vertices, uint[] indices, float[] colours, string vertexShaderCode, string pixelShaderCode)
         {

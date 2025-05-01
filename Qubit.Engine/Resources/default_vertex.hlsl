@@ -14,19 +14,11 @@ vs_out vs_main(vs_in input)
 {
     vs_out output;
     
-    // Adjust for DirectX coordinate system
-    // DirectX has (0,0) at the top-left corner and y increases downward
-    // To center the quad, we keep the positions as they are
-    // The offset might be happening due to viewport settings
     float4 pos = float4(input.position, 1.0);
-    
-    // DirectX expects y to be flipped compared to OpenGL
-    // This might fix your positioning issue
-    //pos.y = -pos.y;
-    
+
     output.position_clip = pos;
     
-    // Pass the color to the pixel shader
+    // Pass the colour to the input
     output.outColor = input.color;
     
     return output;

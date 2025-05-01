@@ -1,14 +1,9 @@
-﻿using System.Reflection;
-using System.Runtime.CompilerServices;
-using Qubit.Engine;
+﻿using Qubit.Engine;
 using Qubit.Engine.Core;
 using Qubit.Engine.Graphics;
-using Qubit.Engine.Graphics.DirectXShaders;
 using Qubit.Engine.Input;
+using Qubit.Engine.Scene;
 using Silk.NET.Core.Native;
-using Silk.NET.Direct3D.Compilers;
-using Silk.NET.Direct3D11;
-using Silk.NET.DXGI;
 using Silk.NET.Input;
 
 namespace PointLonely
@@ -39,8 +34,9 @@ namespace PointLonely
             1.0f, 1.0f, 0.0f  // yellow (top left)
         };
 
+        private Scene scene;
+
         public static QEngine Engine { get; private set; }
-        private Mesh mesh;
 
         static void Main(string[] args)
         {
@@ -53,33 +49,28 @@ namespace PointLonely
 
         void IAppLogic.OnLoad()
         {
-            mesh = new Mesh(
+            scene = new("default");
+
+            var mesh = new Mesh(
                 vertices,
                 indices,
                 colors,
                 Qubit.Engine.Utils.File.GetEmbeddedResourceString("Qubit.Engine.Resources.default_vertex.hlsl"),
                 Qubit.Engine.Utils.File.GetEmbeddedResourceString("Qubit.Engine.Resources.default_pixel.hlsl")
             );
+
+            scene.AddMesh("quad", mesh);
+            
         }
 
         void IAppLogic.OnRender(double deltaTime)
         {
-            if (EngineWindow.directX == null)
-            {
-                throw new Exception("DirectX has not been initialised");
-            }
             Render render = new Render(EngineWindow.directX);
 
             render.ClearScreen(new Colour{ Red = 0.0f, Blue = 0.0f, Green = 0.0f, Alpha = 1.0f});
 
-            render.SetViewport(EngineWindow._window.FramebufferSize);
-            render.SetRenderTargetView();
-            render.SetDefaultRasterizerState();
+            scene.Render(render);
 
-            render.Assemble(mesh, 3U * sizeof(float), 0U, D3DPrimitiveTopology.D3D11PrimitiveTopologyTrianglelist);
-            render.BindShader();
-
-            render.DrawQuad(indices.Length);
             render.Present();
 
             render.Cleanup();

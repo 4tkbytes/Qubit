@@ -5,7 +5,6 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Qubit.Engine.Core;
-using Qubit.Engine.Graphics.DirectXShaders;
 using Silk.NET.Assimp;
 using Silk.NET.Core.Native;
 using Silk.NET.Direct3D.Compilers;
@@ -33,7 +32,6 @@ namespace Qubit.Engine.Graphics
         private ComPtr<ID3D11Buffer> vertexBuffer;
         private ComPtr<ID3D11Buffer> indexBuffer;
         private ComPtr<ID3D11Buffer> colourBuffer;
-
 
         public ComPtr<ID3D11RenderTargetView> RenderTargetView => renderTargetView;
 
@@ -89,7 +87,7 @@ namespace Qubit.Engine.Graphics
             }
         }
 
-        public void Assemble(DirectXShaders.Mesh mesh, uint vertexStride = 3U * sizeof(float), uint vertexOffset = 0U, D3DPrimitiveTopology topology = D3DPrimitiveTopology.D3D10PrimitiveTopologyTrianglelist)
+        public void Assemble(Mesh mesh, uint vertexStride = 3U * sizeof(float), uint vertexOffset = 0U, D3DPrimitiveTopology topology = D3DPrimitiveTopology.D3D10PrimitiveTopologyTrianglelist)
         {
             vertexBuffer = directX.VertexBuffer;
             indexBuffer = directX.IndexBuffer;
