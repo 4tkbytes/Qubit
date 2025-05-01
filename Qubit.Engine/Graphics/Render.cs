@@ -29,8 +29,11 @@ namespace Qubit.Engine.Graphics
 
         private ComPtr<ID3D11RenderTargetView> renderTargetView = default;
         private ComPtr<ID3D11Texture2D> framebuffer;
+
         private ComPtr<ID3D11Buffer> vertexBuffer;
         private ComPtr<ID3D11Buffer> indexBuffer;
+        private ComPtr<ID3D11Buffer> colourBuffer;
+
 
         public ComPtr<ID3D11RenderTargetView> RenderTargetView => renderTargetView;
 
@@ -57,8 +60,10 @@ namespace Qubit.Engine.Graphics
 
         public void SetViewport(Vector2D<int> FramebufferSize)
         {
-            // Note to self: Probably going to be changed later
             var viewport = new Viewport(0, 0, FramebufferSize.X, FramebufferSize.Y, 0, 1);
+
+            //Console.WriteLine($"Viewport size: {EngineWindow._window.FramebufferSize}");
+
             directX.DeviceContext.RSSetViewports(1, in viewport);
         }
 
@@ -66,6 +71,44 @@ namespace Qubit.Engine.Graphics
         {
             directX.DeviceContext.OMSetRenderTargets(1, ref renderTargetView, ref Unsafe.NullRef<ID3D11DepthStencilView>());
         }
+
+        public void SetDefaultRasterizerState()
+        {
+            unsafe
+            {
+                var rasterizerDesc = new RasterizerDesc
+                {
+                    FillMode = FillMode.Solid,
+                    CullMode = CullMode.None, // Turn off culling
+                    FrontCounterClockwise = false
+                };
+
+                ComPtr<ID3D11RasterizerState> rasterizerState = default;
+                directX.Device.CreateRasterizerState(in rasterizerDesc, ref rasterizerState);
+                directX.DeviceContext.RSSetState(rasterizerState);
+            }
+        }
+
+        public void Assemble(DirectXShaders.Mesh mesh, uint vertexStride = 3U * sizeof(float), uint vertexOffset = 0U, D3DPrimitiveTopology topology = D3DPrimitiveTopology.D3D10PrimitiveTopologyTrianglelist)
+        {
+            vertexBuffer = directX.VertexBuffer;
+            indexBuffer = directX.IndexBuffer;
+            colourBuffer = directX.ColourBuffer;
+
+            directX.DeviceContext.IASetPrimitiveTopology(topology);
+            directX.DeviceContext.IASetInputLayout(mesh.InputLayout);
+
+            // Bind position buffer to slot 0
+            directX.DeviceContext.IASetVertexBuffers(0, 1, ref vertexBuffer, in vertexStride, in vertexOffset);
+
+            // Bind color buffer to slot 1
+            uint colorStride = 3U * sizeof(float); // 3 floats per color (RGB)
+            uint colorOffset = 0U;
+            directX.DeviceContext.IASetVertexBuffers(1, 1, ref colourBuffer, in colorStride, in colorOffset);
+
+            directX.DeviceContext.IASetIndexBuffer(indexBuffer, Format.FormatR32Uint, 0);
+        }
+
 
         public void BindShader()
         {
@@ -77,17 +120,6 @@ namespace Qubit.Engine.Graphics
         public void DrawQuad(int indicesLength)
         {
             directX.DeviceContext.DrawIndexed((uint)indicesLength, 0, 0);
-        }
-
-        public void Assemble(DirectXShaders.Mesh mesh, uint vertexStride, uint vertexOffset, D3DPrimitiveTopology topology)
-        {
-            vertexBuffer = directX.VertexBuffer;
-            indexBuffer = directX.IndexBuffer;
-
-            directX.DeviceContext.IASetPrimitiveTopology(topology);
-            directX.DeviceContext.IASetInputLayout(mesh.InputLayout);
-            directX.DeviceContext.IASetVertexBuffers(0, 1, ref vertexBuffer, in vertexStride, in vertexOffset);
-            directX.DeviceContext.IASetIndexBuffer(indexBuffer, Format.FormatR32Uint, 0);
         }
 
         public void Present()

@@ -12,21 +12,25 @@ namespace Qubit.Engine.Graphics.DirectXShaders
     {
         float[] vertices;
         uint[] indices;
-        private Graphics.DirectX directX; // Add a reference to the DirectX instance
+        float[] colours;
+        private DirectX directX;
         private ComPtr<ID3D11Buffer> vertexBuffer = default;
         private ComPtr<ID3D11Buffer> indexBuffer = default;
+        private ComPtr<ID3D11Buffer> colourBuffer = default;
 
-        public Buffer(float[] vertices, uint[] indices, Graphics.DirectX directX)
+        public Buffer(float[] vertices, uint[] indices, float[] colours, DirectX directX)
         {
             this.vertices = vertices;
             this.indices = indices;
-            this.directX = directX; // Initialize the DirectX instance
+            this.colours = colours;
+            this.directX = directX;
 
-            Load(vertices, indices);
+            Load(vertices, indices, colours);
         }
 
-        private unsafe void Load(float[] vertices, uint[] indices)
+        private unsafe void Load(float[] vertices, uint[] indices, float[] colours)
         {
+            // Vertex Buffer
             var bufferDesc = new BufferDesc
             {
                 ByteWidth = (uint)(vertices.Length * sizeof(float)),
@@ -47,11 +51,12 @@ namespace Qubit.Engine.Graphics.DirectXShaders
                         in subresourceData,
                         ref vertexBuffer
                 ));
-                
+
                 // Assign to DirectX after creation
                 directX.VertexBuffer = vertexBuffer;
             }
 
+            // Index Buffer
             bufferDesc = new BufferDesc
             {
                 ByteWidth = (uint)(indices.Length * sizeof(uint)),
@@ -72,10 +77,38 @@ namespace Qubit.Engine.Graphics.DirectXShaders
                         in subresourceData,
                         ref indexBuffer
                 ));
-                
+
                 // Assign to DirectX after creation
                 directX.IndexBuffer = indexBuffer;
             }
+
+            // Colour Buffer
+            bufferDesc = new BufferDesc
+            {
+                ByteWidth = (uint)(colours.Length * sizeof(float)),
+                Usage = Usage.Default,
+                BindFlags = (uint)BindFlag.VertexBuffer
+            };
+
+            fixed (float* colorData = colours)
+            {
+                var subresourceData = new SubresourceData
+                {
+                    PSysMem = colorData
+                };
+
+                SilkMarshal.ThrowHResult(
+                    directX.Device.CreateBuffer(
+                        in bufferDesc,
+                        in subresourceData,
+                        ref colourBuffer
+                ));
+
+                // Assign the color buffer to DirectX - FIX HERE
+                directX.ColourBuffer = colourBuffer;  // CORRECTED LINE
+            }
         }
+
+
     }
 }

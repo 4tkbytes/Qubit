@@ -25,6 +25,7 @@ namespace Qubit.Engine.Graphics
         ComPtr<ID3D11DeviceContext> deviceContext = default;
         ComPtr<ID3D11Buffer> vertexBuffer = default;
         ComPtr<ID3D11Buffer> indexBuffer = default;
+        ComPtr<ID3D11Buffer> colourBuffer = default;
         ComPtr<ID3D11VertexShader> vertexShader = default;
         ComPtr<ID3D11PixelShader> pixelShader = default;
         ComPtr<ID3D11InputLayout> inputLayout = default;
@@ -48,6 +49,12 @@ namespace Qubit.Engine.Graphics
             get => indexBuffer;
             set => indexBuffer = value;
         }
+        public ComPtr<ID3D11Buffer> ColourBuffer
+        {
+            get => colourBuffer;
+            set => colourBuffer = value;
+        }
+
         public ComPtr<ID3D11VertexShader> VertexShader
         {
             get => vertexShader;
@@ -104,7 +111,7 @@ namespace Qubit.Engine.Graphics
             // Swapchain
             var swapChainDesc = new SwapChainDesc1
             {
-                BufferCount = 2,
+                BufferCount = 3,
                 Format = Format.FormatB8G8R8A8Unorm,
                 BufferUsage = DXGI.UsageRenderTargetOutput,
                 SwapEffect = SwapEffect.FlipDiscard,
@@ -136,8 +143,11 @@ namespace Qubit.Engine.Graphics
             swapchain.Dispose();
             device.Dispose();
             deviceContext.Dispose();
+            
             vertexBuffer.Dispose();
             indexBuffer.Dispose();
+            colourBuffer.Dispose();
+
             vertexShader.Dispose();
             pixelShader.Dispose();
             inputLayout.Dispose();

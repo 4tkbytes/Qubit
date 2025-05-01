@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Qubit.Engine.Core;
@@ -16,25 +17,29 @@ namespace Qubit.Engine.Graphics.DirectXShaders
         private Shader pixelShader;
         private Buffer buffer;
 
-        private float[] vertices; 
-        private uint[] indices; 
+        private float[] vertices;
+        private uint[] indices;
+        private float[] colours;
+
         private string vertexShaderCode; 
         private string pixelShaderCode;
 
         private ComPtr<ID3D11InputLayout> inputLayout;
         public ComPtr<ID3D11InputLayout> InputLayout => inputLayout;
 
-        public Mesh(float[] vertices, uint[] indices, string vertexShaderCode, string pixelShaderCode)
+        public Mesh(float[] vertices, uint[] indices, float[] colours, string vertexShaderCode, string pixelShaderCode)
         {
             this.vertices = vertices;
             this.indices = indices;
+            this.colours = colours;
+
             this.vertexShaderCode = vertexShaderCode;
             this.pixelShaderCode = pixelShaderCode;
 
             if (EngineWindow.directX == null)
                 throw new InvalidOperationException("DirectX instance is not initialized");
 
-            buffer = new(vertices, indices, EngineWindow.directX);
+            buffer = new(vertices, indices, colours, EngineWindow.directX);
 
             vertexShader = new(vertexShaderCode, Shader.ShaderType.Vertex);
             pixelShader = new(pixelShaderCode, Shader.ShaderType.Pixel);
@@ -48,19 +53,48 @@ namespace Qubit.Engine.Graphics.DirectXShaders
             pixelShader.Cleanup();
         }
 
+        public Mesh(float[] vertices, uint[] indices, float[] colours)
+            : this(vertices, indices, colours,
+                Utils.File.GetEmbeddedResourceString("Qubit.Engine.Resources.default_vertex.hlsl"),
+                Utils.File.GetEmbeddedResourceString("Qubit.Engine.Resources.default_pixel.hlsl"))
+        {
+        }
+
         private unsafe void layoutDesc()
         {
             if (EngineWindow.directX == null)
                 throw new InvalidOperationException("DirectX instance is not initialized");
-                
-            fixed (byte* name = SilkMarshal.StringToMemory("POS"))
+
+            // Create an array to hold both input elements
+            var inputElements = stackalloc InputElementDesc[2];
+
+            // In layoutDesc(), print the buffer information
+            Console.WriteLine($"Vertex code buffer size: {vertexShader.VertexCode.GetBufferSize()}");
+            Console.WriteLine("Creating input layout with POSITION and COLOR semantics");
+
+            // Position element
+            fixed (byte* positionName = SilkMarshal.StringToMemory("POSITION"))
+            fixed (byte* colorName = SilkMarshal.StringToMemory("COLOR"))
             {
-                var inputElement = new InputElementDesc
+                // Position input element
+                inputElements[0] = new InputElementDesc
                 {
-                    SemanticName = name,
+                    SemanticName = positionName,
                     SemanticIndex = 0,
                     Format = Format.FormatR32G32B32Float,
                     InputSlot = 0,
+                    AlignedByteOffset = 0,
+                    InputSlotClass = InputClassification.PerVertexData,
+                    InstanceDataStepRate = 0
+                };
+
+                // Color input element
+                inputElements[1] = new InputElementDesc
+                {
+                    SemanticName = colorName,
+                    SemanticIndex = 0,
+                    Format = Format.FormatR32G32B32Float,
+                    InputSlot = 1, // Use slot 1 for color buffer
                     AlignedByteOffset = 0,
                     InputSlotClass = InputClassification.PerVertexData,
                     InstanceDataStepRate = 0
@@ -71,8 +105,8 @@ namespace Qubit.Engine.Graphics.DirectXShaders
                 (
                     EngineWindow.directX.Device.CreateInputLayout
                     (
-                        in inputElement,
-                        1,
+                        inputElements,
+                        2, // Two input elements
                         vertexShader.VertexCode.GetBufferPointer(),
                         vertexShader.VertexCode.GetBufferSize(),
                         ref inputLayout
@@ -81,6 +115,10 @@ namespace Qubit.Engine.Graphics.DirectXShaders
                 EngineWindow.directX.InputLayout = inputLayout;
             }
         }
+
+        
+
+
 
     }
 }
