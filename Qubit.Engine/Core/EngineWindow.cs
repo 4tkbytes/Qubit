@@ -11,7 +11,6 @@ using Silk.NET.Core.Native;
 using Silk.NET.DXGI;
 using Silk.NET.Input;
 using Silk.NET.Maths;
-using Silk.NET.OpenXR;
 using Silk.NET.Windowing;
 using static Qubit.Engine.Core.EngineWindow;
 
