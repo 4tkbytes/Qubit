@@ -18,6 +18,9 @@ namespace Qubit.Engine.Graphics
         public float NearPlane { get; set; } = 0.1f;
         public float FarPlane { get; set; } = 100.0f;
 
+        public bool UseOrthographic { get; set; } = false;
+        public float OrthographicSize { get; set; } = 2.0f;
+
         public Matrix4X4<float> ViewMatrix => CalculateViewMatrix();
         public Matrix4X4<float> ProjectionMatrix => CalculateProjectionMatrix();
 
@@ -28,12 +31,21 @@ namespace Qubit.Engine.Graphics
 
         private Matrix4X4<float> CalculateProjectionMatrix()
         {
-            return Matrix4X4.CreatePerspectiveFieldOfView(
-                FieldOfView * (MathF.PI / 180.0f), // Convert degrees to radians
-                AspectRatio,
-                NearPlane,
-                FarPlane
-            );
+            if (UseOrthographic)
+            {
+                float width = OrthographicSize * AspectRatio;
+                float height = OrthographicSize;
+                return Matrix4X4.CreateOrthographic(width, height, NearPlane, FarPlane);
+            }
+            else
+            {
+                return Matrix4X4.CreatePerspectiveFieldOfView(
+                    FieldOfView * (MathF.PI / 180.0f),
+                    AspectRatio,
+                    NearPlane,
+                    FarPlane
+                );
+            }
         }
 
     }

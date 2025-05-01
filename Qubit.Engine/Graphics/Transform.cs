@@ -10,25 +10,34 @@ namespace Qubit.Engine.Graphics
 
         public Matrix4X4<float> ModelMatrix => CalculateModelMatrix();
 
-        public Transform() { }
-
+        // This fuckass function is the reason why I sleep so late
         private Matrix4X4<float> CalculateModelMatrix()
         {
-            // Create rotation matrices for each axis
+            // Use Silk.NET.Math libraries for all matrix operations
+
+            // Create scale matrix
+            var scale = Matrix4X4.CreateScale(Scale.X, Scale.Y, Scale.Z);
+
+            // Create rotation matrices for each axis in the correct order
             var rotX = Matrix4X4.CreateRotationX(Rotation.X);
             var rotY = Matrix4X4.CreateRotationY(Rotation.Y);
             var rotZ = Matrix4X4.CreateRotationZ(Rotation.Z);
 
-            // Combine rotations
-            var rotation = rotX * rotY * rotZ;
+            // Combine rotations carefully (order matters)
+            // For most 3D engines, rotation order is typically Z, then X, then Y
+            var rotation = Matrix4X4.Multiply(Matrix4X4.Multiply(rotZ, rotX), rotY);
 
-            // Create scale and translation matrices
-            var scale = Matrix4X4.CreateScale(Scale.X, Scale.Y, Scale.Z);
+            // Create translation matrix
             var translation = Matrix4X4.CreateTranslation(Position.X, Position.Y, Position.Z);
 
-            // Combine all transformations (scale, then rotate, then translate)
-            return scale * rotation * translation;
+            // Combine transforms in the correct order: Scale → Rotate → Translate
+            // Use explicit Matrix4X4.Multiply to avoid any operator overloading issues
+            var scaleRotate = Matrix4X4.Multiply(scale, rotation);
+            var finalTransform = Matrix4X4.Multiply(scaleRotate, translation);
+
+            return finalTransform;
         }
+
 
         public void Rotate(float deltaX, float deltaY, float deltaZ)
         {

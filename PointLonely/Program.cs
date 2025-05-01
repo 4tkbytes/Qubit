@@ -13,13 +13,12 @@ namespace PointLonely
     {
         float[] vertices =
         {
-            //  X      Y      Z
-             0.5f,  0.5f,  0.0f,  // top right
-             0.5f, -0.5f,  0.0f,  // bottom right
-            -0.5f, -0.5f,  0.0f,  // bottom left
-            -0.5f,  0.5f,  0.0f,  // top left
+            // X     Y     Z
+            -0.9f,  0.9f, 0.0f,  // top left
+             0.9f,  0.9f, 0.0f,  // top right
+             0.9f, -0.9f, 0.0f,  // bottom right
+            -0.9f, -0.9f, 0.0f,  // bottom left
         };
-
 
         uint[] indices =
         {
@@ -27,19 +26,15 @@ namespace PointLonely
             1, 2, 3,
         };
 
-
-        // Rainbow colors for the vertices
-        // Fixed vertex colors - Vibrant pure colors
         float[] colors = {
-            1.0f, 0.0f, 0.0f, // Red (top right)
-            0.0f, 1.0f, 0.0f, // Green (bottom right)
-            0.0f, 0.0f, 1.0f, // Blue (bottom left)
-            1.0f, 1.0f, 0.0f  // Yellow (top left)
+            1.0f, 0.0f, 0.0f, // Red (top left - vertex 0)
+            0.0f, 1.0f, 0.0f, // Green (top right - vertex 1)
+            0.0f, 0.0f, 1.0f, // Blue (bottom right - vertex 2)
+            1.0f, 1.0f, 0.0f  // Yellow (bottom left - vertex 3)
         };
 
-
-
         private Scene scene;
+        private Render render;
 
         public static QEngine Engine { get; private set; }
 
@@ -64,40 +59,54 @@ namespace PointLonely
                 Qubit.Engine.Utils.File.GetEmbeddedResourceString("Qubit.Engine.Resources.default_pixel.hlsl")
             );
 
-            // Position the mesh where the camera can see it (at Z=0)
+            // Position the mesh directly in front of the camera
             mesh.Transform.Position = new Vector3D<float>(0, 0, 2.0f);
 
-            // Setup the camera properly
-            scene.Camera.Position = new Vector3D<float>(0, 0, 0);  // Camera at origin
-            scene.Camera.Target = new Vector3D<float>(0, 0, 1);    // Looking along +Z axis
-            scene.Camera.Up = Vector3D<float>.UnitY;               // Y is up
+            // No rotation
+            mesh.Transform.Rotation = Vector3D<float>.Zero;
 
-            // Set the aspect ratio based on window dimensions
+            // Make it larger to ensure it's visible
+            mesh.Transform.Scale = new Vector3D<float>(2, 2, 2);
+
+            // Set up a simple orthographic camera
+            scene.Camera.Position = new Vector3D<float>(0, 0, 0);
+            scene.Camera.Target = new Vector3D<float>(0, 0, 1);
+            scene.Camera.Up = Vector3D<float>.UnitY;
+
+            // Use orthographic projection for simplicity
+            scene.Camera.FieldOfView = 45.0f;
             scene.Camera.AspectRatio = 1280f / 720f;
+            scene.Camera.NearPlane = 0.1f;
+            scene.Camera.FarPlane = 100.0f;
+            scene.Camera.UseOrthographic = true;
+            scene.Camera.OrthographicSize = 1.0f; // Adjust as needed
 
             scene.AddMesh("quad", mesh);
+            render = new Render(EngineWindow.directX);
         }
+
 
         void IAppLogic.OnRender(double deltaTime)
         {
-            Render render = new Render(EngineWindow.directX);
-
-            render.ClearScreen(new Colour{ Red = 0.0f, Blue = 0.0f, Green = 0.0f, Alpha = 1.0f});
+            // Set a dark gray background
+            render.ClearScreen(new Colour { Red = 0.2f, Blue = 0.2f, Green = 0.2f, Alpha = 1.0f });
 
             scene.Render(render);
 
             render.Present();
-
             render.Cleanup();
         }
+
+
 
         void IAppLogic.OnUpdate(double deltaTime)
         {
             var mesh = scene.MeshList["quad"];
 
-            // More dramatic rotation to see color changes clearly
-            mesh.Transform.Rotate(0, (float)deltaTime * 1.0f, 0); // Rotate around Y axis
+            mesh.Transform.Rotate(0, (float)deltaTime, 0);
         }
+
+
 
         public void KeyDown(IKeyboard keyboard, Key key, int keycode)
         {

@@ -156,48 +156,74 @@ namespace Qubit.Engine.Graphics
         {
             unsafe
             {
-                // Check if the transformBuffer is not initialized
-                if (transformBuffer.Handle == null)
-                {
-                    CreateTransformBuffer();
-                }
+                // Always recreate the transform buffer
+                CreateTransformBuffer();
 
                 try
                 {
-                    // Map the buffer to get access to its memory
+                    // Map the buffer
                     var mappedResource = default(MappedSubresource);
                     directX.DeviceContext.Map(transformBuffer, 0, Map.WriteDiscard, 0, ref mappedResource);
 
-                    // Get a pointer to the buffer data
-                    var dataPtr = (float*)mappedResource.PData;
-                    if (dataPtr == null)
-                    {
+                    if (mappedResource.PData == null)
                         throw new InvalidOperationException("Failed to map constant buffer memory");
+
+                    // Copy the matrices to a continuous memory block
+                    float* dataPtr = (float*)mappedResource.PData;
+
+                    // Debug: Log projection matrix values
+                    Console.WriteLine("Projection Matrix:");
+                    for (int row = 0; row < 4; row++)
+                    {
+                        string rowStr = "";
+                        for (int col = 0; col < 4; col++)
+                        {
+                            rowStr += $"{projection[row, col]:F3} ";
+                        }
+                        Console.WriteLine(rowStr);
                     }
 
-                    // Write all matrices in a single block
-                    Span<Matrix4X4<float>> matrices = stackalloc Matrix4X4<float>[3] { model, view, projection };
-                    fixed (Matrix4X4<float>* matricesPtr = matrices)
-                    {
-                        // Copy all matrices at once (48 floats total)
-                        System.Buffer.MemoryCopy(
-                            matricesPtr,
-                            dataPtr,
-                            3 * sizeof(Matrix4X4<float>),
-                            3 * sizeof(Matrix4X4<float>)
-                        );
-                    }
+                    // Transpose the matrices if needed for DirectX (row-major vs column-major)
+                    Matrix4X4<float> transposedModel = Matrix4X4.Transpose(model);
+                    Matrix4X4<float> transposedView = Matrix4X4.Transpose(view);
+                    Matrix4X4<float> transposedProj = Matrix4X4.Transpose(projection);
+
+                    // Copy the transposed matrices (ensures correct format for HLSL)
+                    CopyMatrixToBuffer(transposedModel, dataPtr);
+                    CopyMatrixToBuffer(transposedView, dataPtr + 16);
+                    CopyMatrixToBuffer(transposedProj, dataPtr + 32);
                 }
                 finally
                 {
-                    // Always unmap the buffer when done
+                    // Always unmap
                     directX.DeviceContext.Unmap(transformBuffer, 0);
                 }
 
-                // Bind the buffer to the vertex shader
+                // Bind the buffer
                 directX.DeviceContext.VSSetConstantBuffers(0, 1, ref transformBuffer);
             }
         }
+
+        private unsafe void CopyMatrixToBuffer(Matrix4X4<float> matrix, float* destination)
+        {
+            destination[0] = matrix.M11;
+            destination[1] = matrix.M12;
+            destination[2] = matrix.M13;
+            destination[3] = matrix.M14;
+            destination[4] = matrix.M21;
+            destination[5] = matrix.M22;
+            destination[6] = matrix.M23;
+            destination[7] = matrix.M24;
+            destination[8] = matrix.M31;
+            destination[9] = matrix.M32;
+            destination[10] = matrix.M33;
+            destination[11] = matrix.M34;
+            destination[12] = matrix.M41;
+            destination[13] = matrix.M42;
+            destination[14] = matrix.M43;
+            destination[15] = matrix.M44;
+        }
+
 
 
         public void Cleanup()

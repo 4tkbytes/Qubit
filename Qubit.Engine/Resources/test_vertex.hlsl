@@ -1,4 +1,4 @@
-﻿// This MUST be present for transformations to work
+﻿// Add back the constant buffer for transformations
 cbuffer TransformBuffer : register(b0)
 {
     float4x4 model;
@@ -22,13 +22,17 @@ vs_out vs_main(vs_in input)
 {
     vs_out output;
     
-    // Apply transformations in the correct order
-    float4 worldPos = mul(float4(input.position, 1.0), model);
-    float4 viewPos = mul(worldPos, view);
-    output.position_clip = mul(viewPos, projection);
+    // Use identity matrix for projection to see if it works
+    float4 pos = float4(input.position, 1.0);
     
-    // Pass the color to the pixel shader
+    // Identity matrix multiplication (effectively no projection)
+    output.position_clip = pos;
+    
+    // Pass the color through unchanged
     output.outColor = input.color;
     
     return output;
 }
+
+
+
