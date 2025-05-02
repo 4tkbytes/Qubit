@@ -224,8 +224,6 @@ namespace Qubit.Engine.Graphics
             destination[15] = matrix.M44;
         }
 
-
-
         public void Cleanup()
         {
             renderTargetView.Dispose();
