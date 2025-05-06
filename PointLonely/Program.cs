@@ -12,24 +12,49 @@ namespace PointLonely
     {
         float[] vertices =
         {
-            // X     Y     Z
-            -0.9f,  0.9f, 0.0f,  // top left
-             0.9f,  0.9f, 0.0f,  // top right
-             0.9f, -0.9f, 0.0f,  // bottom right
-            -0.9f, -0.9f, 0.0f,  // bottom left
+            // VO
+            -0.5f, 0.5f, 0.5f,
+            // V1
+            -0.5f, -0.5f, 0.5f,
+            // V2
+            0.5f, -0.5f, 0.5f,
+            // V3
+            0.5f, 0.5f, 0.5f,
+            // V4
+            -0.5f, 0.5f, -0.5f,
+            // V5
+            0.5f, 0.5f, -0.5f,
+            // V6
+            -0.5f, -0.5f, -0.5f,
+            // V7
+            0.5f, -0.5f, -0.5f,
         };
 
         uint[] indices =
         {
-            0, 1, 3,
-            1, 2, 3,
+            // Front face
+            0, 1, 3, 3, 1, 2,
+            // Top Face
+            4, 0, 3, 5, 4, 3,
+            // Right face
+            3, 2, 7, 5, 3, 7,
+            // Left face
+            6, 1, 0, 6, 0, 4,
+            // Bottom face
+            2, 1, 6, 2, 6, 7,
+            // Back face
+            7, 6, 4, 7, 4, 5,
         };
 
         float[] colors = {
-            1.0f, 0.0f, 0.0f, // Red (top left - vertex 0)
-            0.0f, 1.0f, 0.0f, // Green (top right - vertex 1)
-            0.0f, 0.0f, 1.0f, // Blue (bottom right - vertex 2)
-            1.0f, 1.0f, 0.0f  // Yellow (bottom left - vertex 3)
+            0.5f, 0.0f, 0.0f,
+            0.0f, 0.5f, 0.0f,
+            0.0f, 0.0f, 0.5f,
+            0.0f, 0.5f, 0.5f,
+            0.5f, 0.0f, 0.0f,
+            0.0f, 0.5f, 0.0f,
+            0.0f, 0.0f, 0.5f,
+            0.0f, 0.5f, 0.5f,
         };
 
         private Scene scene;
