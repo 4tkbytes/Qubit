@@ -1,4 +1,5 @@
 pub use env_logger::init;
+use wgpu::PipelineLayoutDescriptor;
 pub use std::sync::Arc;
 pub use winit::{
     application::ApplicationHandler,
@@ -14,6 +15,7 @@ pub struct State {
     pub size: winit::dpi::PhysicalSize<u32>,
     pub surface: wgpu::Surface<'static>,
     pub surface_format: wgpu::TextureFormat,
+    pub render_pipeline: wgpu::RenderPipeline,
 }
 
 impl State {
@@ -34,6 +36,53 @@ impl State {
         let cap = surface.get_capabilities(&adapter);
         let surface_format = cap.formats[0];
 
+        let shader = device.create_shader_module(wgpu::include_wgsl!("shaders/shader.wgsl"));
+        let render_pipeline_layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
+            label: Some("Render Pipeline Layout"),
+            bind_group_layouts: &[],
+            push_constant_ranges: &[],
+        });
+        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("Render Pipeline"),
+            layout: Some(&render_pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &shader,
+                entry_point: Some("vs_main"), // 1.
+                buffers: &[], // 2.
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+            },
+            fragment: Some(wgpu::FragmentState { // 3.
+                module: &shader,
+                entry_point: Some("fs_main"),
+                targets: &[Some(wgpu::ColorTargetState { // 4.
+                    format: surface_format,
+                    blend: Some(wgpu::BlendState::REPLACE),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+            }),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList, // 1.
+                strip_index_format: None,
+                front_face: wgpu::FrontFace::Ccw, // 2.
+                cull_mode: Some(wgpu::Face::Back),
+                // Setting this to anything other than Fill requires Features::NON_FILL_POLYGON_MODE
+                polygon_mode: wgpu::PolygonMode::Fill,
+                // Requires Features::DEPTH_CLIP_CONTROL
+                unclipped_depth: false,
+                // Requires Features::CONSERVATIVE_RASTERIZATION
+                conservative: false,
+            },
+            depth_stencil: None, // 1.
+            multisample: wgpu::MultisampleState {
+                count: 1, // 2.
+                mask: !0, // 3.
+                alpha_to_coverage_enabled: false, // 4.
+            },
+            multiview: None, // 5.
+            cache: None, // 6.
+        });
+
         let state = State {
             window,
             device,
@@ -41,9 +90,9 @@ impl State {
             size,
             surface,
             surface_format,
+            render_pipeline
         };
 
-        // Configure surface for the first time
         state.configure_surface();
 
         state
@@ -93,7 +142,7 @@ impl State {
         // Renders a GREEN screen
         let mut encoder = self.device.create_command_encoder(&Default::default());
         // Create the renderpass which will clear the screen.
-        let renderpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+        let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: None,
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                 view: &texture_view,
@@ -109,9 +158,11 @@ impl State {
         });
 
         // If you wanted to call any drawing commands, they would go here.
+        render_pass.set_pipeline(&self.render_pipeline); // 2.
+        render_pass.draw(0..3, 0..1); // 3.
 
         // End the renderpass.
-        drop(renderpass);
+        drop(render_pass);
 
         // Submit the command in the queue to execute
         self.queue.submit([encoder.finish()]);
